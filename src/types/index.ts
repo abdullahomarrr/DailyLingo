@@ -220,7 +220,7 @@ export interface ClueQuestionResponse {
   warning?: string;
   suggestedTopics?: string[];
   topic?: string;
-  source?: 'DETERMINISTIC' | 'GEMINI_ROUTED';
+  source?: 'DETERMINISTIC' | 'GEMINI_ROUTED' | 'GEMINI_ANSWERED';
 }
 
 export type GameStatus = 'PLAYING' | 'WON' | 'LOST';

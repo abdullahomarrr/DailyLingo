@@ -52,7 +52,7 @@ export const QuestionUnlockSection: React.FC<QuestionUnlockSectionProps> = ({
           Ask about the mystery voice
         </h2>
         <p className="mt-0.5 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-          Your next message is a question, not a country guess.
+          Ask about sports, history, culture, geography or the language. Short questions work too.
         </p>
       </div>
 
@@ -63,7 +63,7 @@ export const QuestionUnlockSection: React.FC<QuestionUnlockSectionProps> = ({
           type="text"
           value={inputQuestion}
           onChange={(e) => setInputQuestion(e.target.value)}
-          placeholder="e.g. What writing system does it use?"
+          placeholder="e.g. Has it ever been in the World Cup?"
           disabled={isLoading}
           className="h-[52px] min-w-0 flex-1 rounded-md border-2 border-neutral-300 bg-white px-4 text-base font-medium text-neutral-950 outline-none transition-colors placeholder:text-neutral-400 focus:border-emerald-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-[#0b1016] dark:text-white dark:placeholder:text-neutral-600 dark:focus:border-emerald-500"
           autoComplete="off"
@@ -94,7 +94,7 @@ export const QuestionUnlockSection: React.FC<QuestionUnlockSectionProps> = ({
       )}
 
       <p className="mt-2.5 text-[10px] text-neutral-400 dark:text-neutral-500">
-        Unsupported or giveaway questions won’t use your clue.
+        Unanswered questions won’t use your clue. Direct country or language guesses belong in guesses.
       </p>
     </section>
   );

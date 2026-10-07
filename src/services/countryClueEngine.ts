@@ -1,10 +1,13 @@
 import countryFactsJson from '@/data/countryClueFacts.json';
+import famousPeopleJson from '@/data/countryFamousPeople.json';
+import worldCupFacts from '@/data/countryWorldCupFacts.json';
 import { ClueQuestionResponse, ClueSafetyCategory, Language } from '@/types';
 
 export type CountryClueTopic =
   | 'dish' | 'religion' | 'languages' | 'population' | 'currency' | 'capital'
-  | 'region' | 'borders' | 'area' | 'landlocked' | 'driving_side' | 'calling_code'
-  | 'domain' | 'demonym' | 'script' | 'tonal' | 'family';
+  | 'region' | 'celebrity' | 'borders' | 'area' | 'landlocked' | 'driving_side' | 'calling_code'
+  | 'domain' | 'demonym' | 'script' | 'tonal' | 'family'
+  | 'world_cup' | 'world_cup_winner' | 'world_cup_host';
 
 interface CountryFactProfile {
   countryCode: string;
@@ -29,6 +32,7 @@ interface CountryFactProfile {
 }
 
 const countryFacts = countryFactsJson as CountryFactProfile[];
+const famousPeople: Record<string, { name: string; knownFor: string; source: string }> = famousPeopleJson;
 
 const TOPIC_PATTERNS: Array<[CountryClueTopic, RegExp[]]> = [
   ['dish', [/\b(national\s+)?dish(?:es)?\b/i, /\bfood\b/i, /\bcuisine\b/i, /\bmeal\b/i, /\bwhat\s+(?:do|would)\s+(?:they|people)\s+eat\b/i, /\bfamous\s+food\b/i]],
@@ -37,7 +41,8 @@ const TOPIC_PATTERNS: Array<[CountryClueTopic, RegExp[]]> = [
   ['population', [/\bpopulation\b/i, /\bhow\s+many\s+(?:people|live)\b/i, /\bpeople\s+live\s+there\b/i, /\bpop\b/i]],
   ['currency', [/\bcurrenc(?:y|ies)\b/i, /\bwhat\s+money\b/i, /\bmoney\s+(?:do|does)\b/i, /\bpay\s+with\b/i]],
   ['capital', [/\bcapital(?:\s+city)?\b/i, /\bmain\s+city\b/i, /\bseat\s+of\s+government\b/i]],
-  ['region', [/\bcontinent\b/i, /\bregion\b/i, /\bwhere\s+(?:is|in the world)\b/i, /\bpart\s+of\s+the\s+world\b/i, /\bgeograph/i]],
+  ['celebrity', [/\bceleb(?:rity|rities|s)?\b/i, /\bfamous\s+(?:people|person|figure|someone)\b/i, /\bwell[ -]known\s+(?:people|person|figure)\b/i, /\b(?:actors?|actress(?:es)?|singers?|rappers?|musicians?|athletes?|footballers?|comedians?|composers?|authors?|writers?|directors?|models?|sports\s+stars?)\b/i, /\bwho(?:'s|\s+is)\s+famous\b/i, /\banyone\s+famous\b/i]],
+  ['region', [/\bcontinent\b/i, /\bregion\b/i, /\bwhere\s+(?:is|in the world)\b/i, /\bpart\s+of\s+(?:the\s+)?(?:world|africa|asia|europe|americas?|oceania)\b/i, /\b(?:africa|asia|europe|americas?|oceania)\b/i, /\b(?:north|south|east|west)(?:ern)?\b/i, /\bgeograph/i]],
   ['borders', [/\bborders?\b/i, /\bneighbou?rs?\b/i, /\bnext\s+to\b/i, /\badjacent\b/i]],
   ['area', [/\barea\b/i, /\bhow\s+(?:big|large)\b/i, /\bsize\s+of\s+the\s+country\b/i]],
   ['landlocked', [/\blandlocked\b/i, /\bcoast(?:line|al)?\b/i, /\baccess\s+to\s+(?:the\s+)?sea\b/i, /\bocean\b/i]],
@@ -51,7 +56,7 @@ const TOPIC_PATTERNS: Array<[CountryClueTopic, RegExp[]]> = [
 ];
 
 const INJECTION_PATTERNS = [/ignore\s+(?:all\s+)?(?:previous|above)/i, /system\s+prompt/i, /developer\s+(?:message|mode)/i, /jailbreak/i, /reveal\s+your\s+instructions/i, /print\s+(?:the\s+)?prompt/i];
-const GIVEAWAY_PATTERNS = [/\bwhat\s+(?:is|country|language)\b.*\banswer\b/i, /\bwhat\s+country\b/i, /\bwhat\s+language\s+(?:is\s+it|is\s+this|are\s+they\s+speaking)\b/i, /\bwhich\s+(?:country|language)\b/i, /\bwhere\s+is\s+the\s+speaker\s+from\b/i, /\btell\s+me\s+the\s+answer\b/i, /\breveal\s+(?:the\s+)?(?:country|language|answer)\b/i, /\bspell\s+(?:the\s+)?(?:country|language|answer|it)\b/i, /\bfirst\s+letter\b/i, /\blast\s+letter\b/i, /\biso\s*(?:code|639)\b/i, /\bglottocode\b/i];
+const GIVEAWAY_PATTERNS = [/\bwhat\s+(?:is|country|language)\b.*\banswer\b/i, /^(?:what|which)\s+(?:country|language)(?:\s+is\s+(?:it|this|that)|\s+are\s+they\s+speaking)?\s*[?!.]*$/i, /\bwhere\s+is\s+the\s+speaker\s+from\s*[?!.]*$/i, /\btell\s+me\s+the\s+answer\b/i, /\b(?:name|reveal)\s+(?:the\s+)?(?:country|language|answer)\b/i, /\bspell\s+(?:the\s+)?(?:country|language|answer|it)\b/i, /\biso\s*(?:code|639)\b/i, /\bglottocode\b/i];
 
 export function classifyDeterministically(question: string): { category: ClueSafetyCategory; topic?: CountryClueTopic } {
   const normalized = question.trim().replace(/\s+/g, ' ');
@@ -60,8 +65,21 @@ export function classifyDeterministically(question: string): { category: ClueSaf
   if (GIVEAWAY_PATTERNS.some((pattern) => pattern.test(normalized))) return { category: 'TOO_REVEALING' };
 
   const lower = normalized.toLowerCase().replace(/[?!.,]/g, '').trim();
-  const asksIfSpecificPlace = /^(?:is\s+it|is\s+this|could\s+it\s+be|maybe|i\s+think)\s+/.test(lower);
-  if (asksIfSpecificPlace && countryFacts.some((profile) => [profile.countryName, ...profile.aliases].some((name) => lower.includes(name.toLowerCase())))) return { category: 'TOO_REVEALING' };
+  const guessedPlace = lower.match(/^(?:is\s+(?:it|this|the\s+answer)|could\s+it\s+be|maybe|i\s+think(?:\s+it\s+is)?)\s+(?:from\s+|in\s+)?(.+)$/)?.[1];
+  // ISO codes such as IN are ordinary words too; substring checks also mistook
+  // country aliases inside unrelated words for direct country guesses.
+  if (guessedPlace && countryFacts.some((profile) => [profile.countryName, ...profile.aliases]
+    .filter((name) => name.toUpperCase() !== profile.countryCode)
+    .some((name) => guessedPlace === name.toLowerCase() || guessedPlace === `the ${name.toLowerCase()}`))) return { category: 'TOO_REVEALING' };
+
+  if (/\bworld\s*cup\b/i.test(normalized)) {
+    // Keep other sports, women's tournaments and detailed statistics available
+    // to the general answerer instead of returning the wrong football fact.
+    if (/\b(?:cricket|rugby|women|women's|womens|female|when|how many|years?|last|202\d)\b/i.test(normalized)) return { category: 'UNRELATED' };
+    const topic = /\b(?:won|win|winner|champion)\b/i.test(normalized) ? 'world_cup_winner'
+      : /\bhost(?:ed|s|ing)?\b/i.test(normalized) ? 'world_cup_host' : 'world_cup';
+    return { category: 'SAFE_CLUE', topic };
+  }
 
   for (const [topic, patterns] of TOPIC_PATTERNS) {
     if (patterns.some((pattern) => pattern.test(normalized))) return { category: 'SAFE_CLUE', topic };
@@ -70,7 +88,37 @@ export function classifyDeterministically(question: string): { category: ClueSaf
 }
 
 export function getSupportedTopics(): CountryClueTopic[] {
-  return TOPIC_PATTERNS.map(([topic]) => topic);
+  return [...TOPIC_PATTERNS.map(([topic]) => topic), 'world_cup', 'world_cup_winner', 'world_cup_host'];
+}
+
+export function getCountryClueContext(language: Language) {
+  const facts = countryFacts.find((profile) => profile.countryCode === language.geoAnchor.countryCode
+    || profile.countryName === (language.geoAnchor.countryName === 'Turkey' ? 'Türkiye' : language.geoAnchor.countryName));
+  return facts ? {
+    country: facts,
+    language: { name: language.name, aliases: language.aliases, family: language.family, scripts: language.scripts, clueProfile: language.clueProfile },
+    famousPerson: famousPeople[facts.countryCode],
+    worldCup: {
+      competition: worldCupFacts.competition,
+      throughYear: worldCupFacts.throughYear,
+      hasAppeared: worldCupFacts.participants.includes(facts.countryCode),
+      hasWon: worldCupFacts.winners.includes(facts.countryCode),
+      hasHosted: worldCupFacts.hosts.includes(facts.countryCode),
+      note: (worldCupFacts.notes as Record<string, string>)[facts.countryCode],
+    },
+  } : null;
+}
+
+export function sanitizeGeneratedClue(language: Language, answer: string): string | null {
+  const context = getCountryClueContext(language);
+  if (!context || !answer.trim() || answer.length > 1200) return null;
+  let sanitized = removeCountryReferences(answer, context.country).replace(/^local\b/i, 'This country');
+  for (const name of [language.name, language.nativeName, ...(language.aliases || [])].filter((name) => name && name.length > 2)) {
+    sanitized = sanitized.replace(new RegExp(`\\b${escapeRegex(name)}\\b`, 'gi'), 'this language');
+  }
+  // URLs and code blocks can hide an answer name or identifying code.
+  if (/https?:\/\/|www\.|```|\[[^\]]*\]\(/i.test(sanitized)) return null;
+  return sanitized;
 }
 
 export function answerCountryClue(language: Language, topic: CountryClueTopic, source: 'DETERMINISTIC' | 'GEMINI_ROUTED' = 'DETERMINISTIC'): ClueQuestionResponse {
@@ -80,13 +128,36 @@ export function answerCountryClue(language: Language, topic: CountryClueTopic, s
 
   let answer = '';
   switch (topic) {
+    case 'world_cup': {
+      const participated = worldCupFacts.participants.includes(facts.countryCode);
+      const note = (worldCupFacts.notes as Record<string, string>)[facts.countryCode];
+      answer = participated
+        ? `Yes — it has been represented at the ${worldCupFacts.competition}.${note ? ` ${note}` : ''}`
+        : `No — through ${worldCupFacts.throughYear}, it has not appeared at the ${worldCupFacts.competition}.`;
+      break;
+    }
+    case 'world_cup_winner': answer = `${worldCupFacts.winners.includes(facts.countryCode) ? 'Yes' : 'No'} — ${worldCupFacts.winners.includes(facts.countryCode) ? 'it has' : `through ${worldCupFacts.throughYear}, it has not`} won the men's FIFA World Cup.`; break;
+    case 'world_cup_host': answer = `${worldCupFacts.hosts.includes(facts.countryCode) ? 'Yes' : 'No'} — ${worldCupFacts.hosts.includes(facts.countryCode) ? 'it has' : `through ${worldCupFacts.throughYear}, it has not`} hosted the men's FIFA World Cup.`; break;
     case 'dish': if (facts.associatedDishes.length) answer = `A dish strongly associated with this country is ${joinList(facts.associatedDishes)}.`; break;
     case 'religion': if (facts.religions) answer = `Its religious landscape is: ${facts.religions}`; break;
     case 'languages': answer = facts.languageDetail || (facts.languages.length ? `Languages used there include ${joinList(facts.languages)}.` : ''); break;
     case 'population': if (facts.population.value) answer = `Its population is about ${formatPopulation(facts.population.value)}${facts.population.year ? ` (${facts.population.year})` : ''}.`; break;
     case 'currency': if (facts.currencies.length) answer = describeCurrencies(facts.currencies); break;
     case 'capital': if (facts.capital) answer = `Its capital is ${facts.capital}.`; break;
-    case 'region': answer = `It is in ${facts.subregion || facts.region}, within ${facts.region}.`; break;
+    case 'region': {
+      // Some subregion labels contain the answer itself (e.g. New Zealand).
+      const subregionNamesCountry = [facts.countryName, ...facts.aliases]
+        .filter((name) => name.length > 2)
+        .some((name) => new RegExp(`\\b${escapeRegex(name)}\\b`, 'i').test(facts.subregion));
+      const region = subregionNamesCountry ? facts.region : facts.subregion || facts.region;
+      answer = `It is in ${region}${region !== facts.region ? `, within ${facts.region}` : ''}.`;
+      break;
+    }
+    case 'celebrity': {
+      const person = famousPeople[facts.countryCode];
+      if (person) answer = `A well-known person associated with this country is ${person.name}, ${person.knownFor}.`;
+      break;
+    }
     case 'borders': answer = facts.borders.length ? `It shares land borders with ${joinList(facts.borders)}.` : 'It has no land borders.'; break;
     case 'area': answer = `It covers about ${Math.round(facts.areaKm2).toLocaleString('en-US')} square kilometres.`; break;
     case 'landlocked': answer = facts.landlocked ? 'It is landlocked.' : 'It is not landlocked and has access to the sea or ocean.'; break;
@@ -121,11 +192,15 @@ export function safetyResponse(category: ClueSafetyCategory): ClueQuestionRespon
 }
 
 function unsupported(): ClueQuestionResponse {
-  return { category: 'UNRELATED', answer: 'I could not match that to a reviewed fact. Try one of these questions instead.', warning: 'No verified answer available', suggestedTopics: suggestions() };
+  return { category: 'UNRELATED', answer: 'I could not confidently answer that question. Your clue is still available — try rephrasing it or asking another question.', warning: 'No confident answer available', suggestedTopics: suggestions() };
 }
 
 function suggestions(): string[] {
-  return ['What is a national dish?', 'What currency do they use?', 'What is the religious landscape?', 'How many people live there?'];
+  return ['Has it ever been in the World Cup?', 'Famous celebrity?', 'What region is it in?', 'What is a national dish?'];
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function joinList(items: string[]): string {

@@ -1,0 +1,12 @@
+{
+  "throughYear": 2026,
+  "competition": "men's FIFA World Cup finals",
+  "source": "https://en.wikipedia.org/wiki/National_team_appearances_in_the_FIFA_World_Cup",
+  "participants": ["BG", "CN", "HR", "CZ", "DK", "FR", "DE", "GR", "HT", "HU", "IS", "ID", "IR", "IE", "IL", "IT", "JP", "NL", "NZ", "NG", "NO", "PE", "PL", "PT", "RO", "RU", "SA", "SN", "RS", "SK", "SI", "ZA", "KR", "ES", "SE", "TR", "UA", "GB", "UZ"],
+  "winners": ["FR", "DE", "IT", "ES", "GB"],
+  "hosts": ["FR", "DE", "IT", "JP", "KR", "ZA", "RU", "GB", "ES"],
+  "notes": {
+    "GB": "Its constituent nations compete separately; at least one has appeared in the finals.",
+    "ID": "Its appearance was in 1938 under a former name."
+  }
+}

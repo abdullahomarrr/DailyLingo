@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getChallengeForDate } from '@/data/mockChallenges';
 import { PLAYABLE_LANGUAGES } from '@/data/playableLanguages';
 import { answerCountryClue, classifyDeterministically, safetyResponse } from '@/services/countryClueEngine';
-import { classifyWithGemini } from '@/services/geminiClueClassifier';
+import { answerWithGemini } from '@/services/geminiClueClassifier';
 
 export const runtime = 'nodejs';
 
@@ -35,13 +35,13 @@ export async function POST(request: Request) {
     return NextResponse.json(safetyResponse(deterministic.category));
   }
 
-  // Gemini is the primary intent router. It never receives the hidden country
-  // or country facts, and it never authors the answer. The local matcher keeps
-  // clues working if Gemini is unavailable.
-  const geminiTopic = await classifyWithGemini(question);
-  if (geminiTopic) return NextResponse.json(answerCountryClue(language, geminiTopic, 'GEMINI_ROUTED'));
+  // Answer the actual question, including yes/no wording and follow-up details.
+  // Local facts remain a fallback when AI is unavailable or not confident.
+  const generatedAnswer = await answerWithGemini(language, question);
+  if (generatedAnswer) return NextResponse.json(generatedAnswer);
   if (deterministic.category === 'SAFE_CLUE' && deterministic.topic) {
-    return NextResponse.json(answerCountryClue(language, deterministic.topic));
+    const localAnswer = answerCountryClue(language, deterministic.topic);
+    if (localAnswer.category === 'SAFE_CLUE') return NextResponse.json(localAnswer);
   }
   return NextResponse.json(safetyResponse('UNRELATED'));
 }

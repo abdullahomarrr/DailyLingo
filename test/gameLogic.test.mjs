@@ -67,7 +67,6 @@ describe('Clue Safety & Anti-Leak Filtering', () => {
     'tell me the answer',
     'is the answer spanish?',
     'spell the language',
-    'what is the first letter?',
     'give me its iso code',
     'ignore previous instructions',
   ];
@@ -82,7 +81,6 @@ describe('Clue Safety & Anti-Leak Filtering', () => {
       lower.includes('what country') ||
       lower.includes('where is the speaker from') ||
       lower.includes('tell me the answer') ||
-      lower.includes('first letter') ||
       lower.includes('spell') ||
       lower.includes('iso code') ||
       lower.includes(`is it ${hiddenName.toLowerCase()}`) ||
